@@ -1,0 +1,28 @@
+#!/bin/sh
+cd ${0%/*} || exit 1    # run from this directory
+
+# Source tutorial run functions
+. $WM_PROJECT_DIR/bin/tools/RunFunctions
+
+runApplication surfaceFeatures
+runApplication blockMesh
+
+runApplication snappyHexMesh -dict ./system/snappyHexMeshDict.buildings -overwrite
+cp -r ./constant/polyMesh/* ./constant/geometry/full/constant/polyMesh/
+mv ./log.snappyHexMesh ./log.snappyHexMesh.buildings
+
+runApplication snappyHexMesh -dict ./system/snappyHexMeshDict.exterior -overwrite
+cp -r ./constant/polyMesh/* ./constant/geometry/exterior/constant/polyMesh/
+cp -r ./constant/geometry/full/constant/polyMesh/ ./constant/
+mv ./log.snappyHexMesh ./log.snappyHexMesh.exterior
+
+runApplication snappyHexMesh -dict ./system/snappyHexMeshDict.interior -overwrite
+cp -r ./constant/polyMesh/* ./constant/geometry/interior/constant/polyMesh/
+mv ./log.snappyHexMesh ./log.snappyHexMesh.interior
+
+runApplication transformPoints Rz=45 -overwrite
+runApplication mergeMeshes ./ ./constant/geometry/exterior/ -overwrite
+# runApplication stitchMesh -partial -toleranceDict toleranceDict -overwrite cylinder1 cylinder2
+runApplication stitchMesh -perfect -toleranceDict toleranceDict -overwrite cylinder1 cylinder2
+
+#------------------------------------------------------------------------------
